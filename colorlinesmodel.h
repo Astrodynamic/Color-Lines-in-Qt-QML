@@ -6,10 +6,11 @@
 
 #include <array>
 #include <vector>
+#include <random>
 
 struct Ball {
     QColor color;
-    bool visible{true};
+    bool visible{false};
 };
 
 enum Role {
@@ -49,6 +50,9 @@ public:
 
     Q_INVOKABLE void reset();
     Q_INVOKABLE void spawn();
+    Q_INVOKABLE void setChosenPosition(int row, int col);
+    Q_INVOKABLE void moveElement(int row, int col);
+    Q_INVOKABLE bool sequenceSearch();
 
 private:
     static constexpr int m_cols = 9;
@@ -56,12 +60,24 @@ private:
     static constexpr int m_number_colors = 4;
     static constexpr int m_number_spawning = 3;
 
+    int m_chosen_row_element{};
+    int m_chosen_col_element{};
+
     int m_scope{};
     int m_empty_cell;
+
+    int m_sequence = 5;
 
     std::array<std::array<Ball, m_cols>, m_rows> m_board;
 
     std::vector<QColor> m_colors;
+
+    static std::random_device rd;
+    static std::default_random_engine generator;
+    static std::uniform_int_distribution<int> distribution_cell;
+    static std::uniform_int_distribution<int> distribution_color;
+
+    bool isEmptyCell(int row, int col);
 };
 
 #endif // COLORLINESMODEL_H

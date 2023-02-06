@@ -24,9 +24,10 @@ TableView {
       anchors.fill: parent
 
       onClicked: {
-
-        console.log("lfsdjjf")
-        model.visible = true
+        if (!_ball.visible) {
+          _clm.moveElement(row, column)
+          _clm.spawn()
+        }
       }
     }
 
@@ -40,7 +41,7 @@ TableView {
       width: cell.width * 0.9
       height: cell.height * 0.9
 
-      color: "red"
+      color: model.color
       radius: width * 0.5
 
       ScaleAnimator {
@@ -58,6 +59,8 @@ TableView {
         onClicked: {
           if (_ball.visible) {
             _sa_ball.running = true
+            _clm.setChosenPosition(row, column)
+            _clm.sequenceSearch()
           }
         }
       }
@@ -66,5 +69,9 @@ TableView {
 
   model: ColorLinesModel {
     id: _clm
+  }
+
+  Component.onCompleted: {
+    _clm.spawn()
   }
 }

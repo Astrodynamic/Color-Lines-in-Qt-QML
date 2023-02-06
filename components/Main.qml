@@ -25,6 +25,7 @@ ApplicationWindow {
 
       onClicked: {
         play_field._tv_model.reset()
+        play_field._tv_model.spawn()
         lbl_scope.text = "Scope: " + play_field._tv_model.scope
       }
     }
