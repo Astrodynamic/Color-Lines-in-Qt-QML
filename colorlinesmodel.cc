@@ -2,17 +2,15 @@
 
 std::random_device ColorLinesModel::rd;
 std::default_random_engine ColorLinesModel::generator(rd());
-std::uniform_int_distribution<int> ColorLinesModel::distribution_cell(0,
-                                                                      m_rows -
-                                                                          1);
+std::uniform_int_distribution<int> ColorLinesModel::distribution_cell(0, m_rows - 1);
 std::uniform_int_distribution<int> ColorLinesModel::distribution_color(0, 4);
 
 ColorLinesModel::ColorLinesModel(QObject *parent)
     : QAbstractItemModel(parent), m_empty_cell{m_cols * m_rows} {
-  m_colors.push_back(QColor(14, 94, 78));
-  m_colors.push_back(QColor(94, 46, 48));
+  m_colors.push_back(QColor(140, 94, 78));
+  m_colors.push_back(QColor(94, 146, 48));
   m_colors.push_back(QColor(49, 48, 74));
-  m_colors.push_back(QColor(39, 34, 65));
+  m_colors.push_back(QColor(139, 34, 95));
   m_colors.push_back(QColor(100, 89, 28));
 }
 
@@ -90,6 +88,7 @@ void ColorLinesModel::reset() {
       cell.visible = false;
     }
   }
+  m_empty_cell = m_rows * m_cols;
   emit dataChanged(index(0, 0), index(m_rows - 1, m_cols - 1));
 }
 
@@ -104,6 +103,11 @@ void ColorLinesModel::spawn() {
     m_board[row][col].color = m_colors[distribution_color(generator)];
     m_board[row][col].visible = true;
 
+    --m_empty_cell;
+    if (m_empty_cell < m_number_spawning) {
+        emit gameOver();
+    }
+
     emit dataChanged(index(row, col), index(row, col));
   }
 }
@@ -114,48 +118,34 @@ void ColorLinesModel::setChosenPosition(int row, int col) {
 }
 
 void ColorLinesModel::moveElement(int row, int col) {
-  m_board[m_chosen_row_element][m_chosen_col_element].visible = false;
+  if (m_chosen_row_element != -1 || m_chosen_col_element != -1) {
+    m_board[m_chosen_row_element][m_chosen_col_element].visible = false;
 
-  emit dataChanged(index(m_chosen_row_element, m_chosen_col_element), index(m_chosen_row_element, m_chosen_col_element));
+    emit dataChanged(index(m_chosen_row_element, m_chosen_col_element), index(m_chosen_row_element, m_chosen_col_element));
 
-  m_board[row][col].color = m_board[m_chosen_row_element][m_chosen_col_element].color;
+    m_board[row][col].color = m_board[m_chosen_row_element][m_chosen_col_element].color;
 
-  m_chosen_row_element = row;
-  m_chosen_col_element = col;
+    m_chosen_row_element = row;
+    m_chosen_col_element = col;
 
-  m_board[m_chosen_row_element][m_chosen_col_element].visible = true;
+    m_board[m_chosen_row_element][m_chosen_col_element].visible = true;
 
-  emit dataChanged(index(m_chosen_row_element, m_chosen_col_element), index(m_chosen_row_element, m_chosen_col_element));
+    emit dataChanged(index(m_chosen_row_element, m_chosen_col_element), index(m_chosen_row_element, m_chosen_col_element));
+
+    m_chosen_row_element = -1;
+    m_chosen_col_element = -1;
+  }
 }
 
 bool ColorLinesModel::sequenceSearch() {
   bool flag{false};
-  QColor color{};
 
-  for (int i = 0; i < m_board.size(); ++i) {
-    int count_sequence{};
-    for (int j = 0; j < m_board[i].size(); ++j) {
-      if (m_board[i][j].visible) {
-        if (!count_sequence) {
-          color = m_board[i][j].color;
-          ++count_sequence;
-        } else if (m_board[i][j].color == color) {
-          ++count_sequence;
-        } else {
-          color = m_board[i][j].color;
-          count_sequence = 1;
-        }
-      } else {
-        if (count_sequence >= m_sequence) {
-          for (int k = j - count_sequence; k < count_sequence; ++k) {
-            m_board[i][k].visible = false;
-          }
-          m_scope += 10;
-        }
-        count_sequence = 0;
-        color = QColor(0, 0, 0);
-      }
-    }
+  if (rowSequenceSearch()) {
+      flag = true;
+  }
+
+  if (colSequenceSearch()) {
+      flag = true;
   }
 
   emit dataChanged(index(0, 0), index(m_rows - 1, m_cols - 1));
@@ -163,6 +153,126 @@ bool ColorLinesModel::sequenceSearch() {
   return flag;
 }
 
+bool ColorLinesModel::isChosePosition() {
+    return m_chosen_row_element >= 0 && m_chosen_col_element >= 0;
+}
+
+int ColorLinesModel::empty_cell() const {
+    return m_empty_cell;
+}
+
 bool ColorLinesModel::isEmptyCell(int row, int col) {
-  return !m_board[row][col].visible;
+    return !m_board[row][col].visible;
+}
+
+bool ColorLinesModel::rowSequenceSearch() {
+    bool flag{false};
+    QColor color{};
+    for (int i = 0; i < m_board.size(); ++i) {
+        int sequence_count{};
+        for (int j = 0; j < m_board[i].size(); ++j) {
+            if (m_board[i][j].visible) {
+                if (!sequence_count) {
+                    color = m_board[i][j].color;
+                    ++sequence_count;
+                } else if (m_board[i][j].color == color) {
+                    ++sequence_count;
+
+                    if (j == m_board.size() - 1) {
+                        if (sequence_count >= m_sequence) {
+                            for (int k = j - sequence_count + 1; k <= j; ++k) {
+                                m_board[i][k].visible = false;
+                            }
+                            m_empty_cell += sequence_count;
+                            m_scope += 10;
+                            flag = true;
+                        }
+                    }
+                } else {
+                    if (sequence_count >= m_sequence) {
+                        for (int k = j - sequence_count; k < j; ++k) {
+                            m_board[i][k].visible = false;
+                        }
+                        m_empty_cell += sequence_count;
+                        m_scope += 10;
+                        flag = true;
+                    }
+                    color = m_board[i][j].color;
+                    sequence_count = 1;
+                }
+            } else {
+                if (sequence_count >= m_sequence) {
+                    for (int k = j - sequence_count; k < j; ++k) {
+                        m_board[i][k].visible = false;
+                    }
+                    m_empty_cell += sequence_count;
+                    m_scope += 10;
+                    flag = true;
+                }
+                sequence_count = 0;
+            }
+        }
+    }
+
+    if (flag) {
+        emit changeScope();
+    }
+
+    return flag;
+}
+
+bool ColorLinesModel::colSequenceSearch() {
+    bool flag{false};
+    QColor color{};
+    for (int i = 0; i < m_board.size(); ++i) {
+        int sequence_count{};
+        for (int j = 0; j < m_board.size(); ++j) {
+            if (m_board[j][i].visible) {
+                if (!sequence_count) {
+                    color = m_board[j][i].color;
+                    ++sequence_count;
+                } else if (m_board[j][i].color == color) {
+                    ++sequence_count;
+
+                    if (j == (m_board.size() - 1)) {
+                        if (sequence_count >= m_sequence) {
+                            for (int k = j - sequence_count + 1; k <= j; ++k) {
+                                m_board[k][i].visible = false;
+                            }
+                            m_empty_cell += sequence_count;
+                            m_scope += 10;
+                            flag = true;
+                        }
+                    }
+                } else {
+                    if (sequence_count >= m_sequence) {
+                        for (int k = j - sequence_count; k < j; ++k) {
+                            m_board[k][i].visible = false;
+                        }
+                        m_empty_cell += sequence_count;
+                        m_scope += 10;
+                        flag = true;
+                    }
+                    color = m_board[j][i].color;
+                    sequence_count = 1;
+                }
+            } else {
+                if (sequence_count >= m_sequence) {
+                    for (int k = j - sequence_count; k < j; ++k) {
+                        m_board[k][i].visible = false;
+                    }
+                    m_empty_cell += sequence_count;
+                    m_scope += 10;
+                    flag = true;
+                }
+                sequence_count = 0;
+            }
+        }
+    }
+
+    if (flag) {
+        emit changeScope();
+    }
+
+    return flag;
 }

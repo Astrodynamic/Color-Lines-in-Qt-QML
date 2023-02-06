@@ -24,9 +24,10 @@ TableView {
       anchors.fill: parent
 
       onClicked: {
-        if (!_ball.visible) {
+        if (!_ball.visible && _clm.isChosePosition()) {
           _clm.moveElement(row, column)
           _clm.spawn()
+          _clm.sequenceSearch()
         }
       }
     }
@@ -60,7 +61,6 @@ TableView {
           if (_ball.visible) {
             _sa_ball.running = true
             _clm.setChosenPosition(row, column)
-            _clm.sequenceSearch()
           }
         }
       }

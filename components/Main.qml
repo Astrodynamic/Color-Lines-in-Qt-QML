@@ -16,6 +16,61 @@ ApplicationWindow {
   visible: true
   title: qsTr("Color Lines 1.0")
 
+  Connections {
+    target: play_field._tv_model
+
+    onChangeScope: {
+      lbl_scope.text = "Scope: " + play_field._tv_model.scope
+    }
+
+    onGameOver: {
+      gameOverDialog.open()
+    }
+  }
+
+  Dialog {
+    id: gameOverDialog
+
+    title: "Game Over"
+
+    anchors.centerIn: parent
+
+    implicitWidth: parent.width
+    implicitHeight: parent.height
+
+    padding: 0
+
+    header: Label {
+      text: gameOverDialog.title
+      horizontalAlignment: Text.AlignHCenter
+      color: "#ffffff"
+      font.bold: true
+      padding: 10
+      background: Rectangle {
+        color: "#707070"
+        border.width: 1.0
+        border.color: "#000000"
+      }
+    }
+
+    contentItem: Label {
+      text: qsTr(lbl_scope.text)
+      font.pointSize: 46
+      horizontalAlignment: Text.AlignHCenter
+      verticalAlignment: Text.AlignVCenter
+      color: "#ffffff"
+      font.bold: true
+      padding: 10
+      background: Rectangle {
+        color: "#353535"
+      }
+    }
+
+    onAccepted: {
+      btn_new_game.clicked()
+    }
+  }
+
   header: ToolBar {
     id: header_tool_bar
 
