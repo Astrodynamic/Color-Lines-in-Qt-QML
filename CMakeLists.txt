@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.2 COMPONENTS
     Quick
+    Sql
     REQUIRED
 )
 
@@ -40,4 +41,5 @@ target_compile_definitions(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     Qt6::Quick
+    Qt6::Sql
 )

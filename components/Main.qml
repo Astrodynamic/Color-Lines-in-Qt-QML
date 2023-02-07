@@ -19,11 +19,12 @@ ApplicationWindow {
   Connections {
     target: play_field._tv_model
 
-    onChangeScope: {
+    function onChangeScope() {
       lbl_scope.text = "Scope: " + play_field._tv_model.scope
+      _ra_scope.running = true
     }
 
-    onGameOver: {
+    function onGameOver() {
       gameOverDialog.open()
     }
   }
@@ -95,6 +96,13 @@ ApplicationWindow {
       anchors.right: parent.right
       anchors.verticalCenter: parent.verticalCenter
       anchors.margins: 10
+
+      RotationAnimator on rotation {
+        id: _ra_scope
+        from: 0
+        to: 360
+        duration: 3000
+      }
     }
   }
 
