@@ -50,7 +50,15 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-.idea
-build*
-.DS_Store
+# CMake Files
 CMakeLists.txt.*
+
+# MacOS files
+.DS_Store
+
+# IDE files
+.idea
+.vscode
+
+# Directory
+build*
